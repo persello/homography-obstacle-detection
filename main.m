@@ -2,7 +2,7 @@
 
 close all;
 
-figuresOn = false;
+figuresOn = true;
 
 imageFolder = 'images/ground';
 
@@ -78,12 +78,19 @@ diffTh = imgaussfilt(double(diffTh), 5);
 % Threshold again.
 diffTh = diffTh > 0.9;
 
+if figuresOn
+    figure("Name", "Thresholded difference after blurring and re-thresholding");
+    imshow(diffTh);
+end
+
+%% Remove blobs under a certain size (percentile).
+
 % Get the blob areas.
 blobAreas = regionprops(diffTh, 'Area');
 blobAreas = [blobAreas.Area];
 
-% Get the 95th percentile.
-minArea = prctile(blobAreas, 95);
+% Get the percentile.
+minArea = prctile(blobAreas, 90);
 
 % Remove blobs under the threshold.
 diffTh = bwareaopen(diffTh, round(minArea));
@@ -123,7 +130,7 @@ firstWhite = smoothdata(firstWhite, "movmedian", size(diffTh, 2) / 10);
 
 pause(0.5); % Doesn't plot in the right place without this.
 
-figure;
+figure("Name", "Result");
 imshow(images{2});
 hold on;
 
@@ -132,5 +139,3 @@ x = 1:size(diffTh, 2);
 y1 = firstWhite;
 y2 = zeros(size(y1));
 area(x, [y1; y2]', 'FaceColor', 'red', 'EdgeColor', 'none', 'FaceAlpha', 0.3);
-
-
