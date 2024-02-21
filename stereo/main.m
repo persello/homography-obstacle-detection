@@ -3,15 +3,19 @@ close all;
 
 %% Paths
 
-baseFolder = "/Volumes/Samsung 980/GOPRO/coderno/";
+baseFolder = "/Volumes/Samsung 980/GOPRO/udine/";
 
 leftSubfolder = "frames/left";
 rightSubfolder = "frames/right";
 homographyFile = "homography.mat";
 stereoParamsFile = "../stereoParams.mat";
 
-startingFrame = 30;
-calibrationFrame = 60;
+startingFrame = 80;
+calibrationFrame = 90;
+
+vw = VideoWriter("output", "MPEG-4");
+vw.FrameRate = 10;
+vw.open();
 
 %% Loading
 
@@ -41,12 +45,13 @@ for i = 1:startingFrame
 end
 
 while imdsL.hasdata() && imdsR.hasdata()
+%for i = 1:1
     % Read images
     I1 = read(imdsL);
     I2 = read(imdsR);
     
     % Process
-    [blobImage, I1, I2] = homobsdetect(I1, I2, H, stereoParams);
+    [blobImage, I1, I2] = homobsdetect(I1, I2, H, toStruct(stereoParams));
     
     % Create full red image.
     red = cat(3, ones(size(blobImage)), zeros(size(blobImage)), zeros(size(blobImage)));
@@ -56,6 +61,12 @@ while imdsL.hasdata() && imdsR.hasdata()
     imshowpair(I1, I2);
     hold on;
     h = imshow(red);
-    set(h, 'AlphaData', blobImage);
+    set(h, 'AlphaData', blobImage / 3);
     hold off;
+
+    frame = getframe(gcf);
+
+    vw.writeVideo(frame);
 end
+
+vw.close();

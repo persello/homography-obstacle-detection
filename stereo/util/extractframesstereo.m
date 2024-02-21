@@ -32,8 +32,10 @@ function extractframesstereo(input_folder, output_folder, skip, count)
     video_left = VideoReader(fullfile(input_folder, video_files(1).name));
     video_right = VideoReader(fullfile(input_folder, video_files(2).name));
 
+    count = min([count, floor(video_left.NumFrames / (skip + 1)), floor(video_right.NumFrames / (skip + 1))]);
+
     % Extract the frames.
-    for i = 1:count
+    parfor i = 1:count
         % Read the frames.
         frame_left = read(video_left, (i - 1) * skip + 1);
         frame_right = read(video_right, (i - 1) * skip + 1);

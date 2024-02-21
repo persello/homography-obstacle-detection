@@ -4,8 +4,8 @@ function [blobImage, I1, I2] = homobsdetect(I1, I2, H, stereoParams)
 arguments(Input)
     I1 (:, :, :) uint8 {mustBeNonempty}
     I2 (:, :, :) uint8 {mustBeNonempty}
-    H projective2d {mustBeNonempty}
-    stereoParams stereoParameters {mustBeNonempty}
+    H (1, 1) projective2d {mustBeNonempty}
+    stereoParams (1, 1) stereoParameters
 end
 
 arguments(Output)
@@ -19,7 +19,7 @@ I1 = undistortImage(I1, stereoParams.CameraParameters1);
 I2 = undistortImage(I2, stereoParams.CameraParameters2);
 
 % Undistort white mask.
-white = true(size(I2, [1, 2]));
+white = 255 * ones(size(I1), "like", I1);
 mask1 = undistortImage(white, stereoParams.CameraParameters1);
 mask2 = undistortImage(white, stereoParams.CameraParameters2);
 
@@ -32,6 +32,10 @@ mask2 = undistortImage(white, stereoParams.CameraParameters2);
 % Warp.
 I1 = imwarp(I1, H, 'OutputView', imref2d(size(I2)));
 
+% Resize images.
+I1 = imresize(I1, 0.5);
+I2 = imresize(I2, 0.5);
+
 % Warp mask.
 mask1 = imwarp(mask1, H, 'OutputView', imref2d(size(mask2)));
 
@@ -39,7 +43,10 @@ mask1 = imwarp(mask1, H, 'OutputView', imref2d(size(mask2)));
 diff = imabsdiff(I1, I2);
 
 % Subtract mask.
-mask = mask1 & mask2;
+mask = mask1(:, :, 1) ~= 0 & mask2(:, :, 1) ~= 0;
+
+% Resize mask.
+mask = imresize(mask, 0.5);
 
 % Mask.
 diff = diff .* uint8(mask);
@@ -47,22 +54,27 @@ diff = diff .* uint8(mask);
 % Threshold.
 diffTh = im2gray(im2double(diff)) > 0.05;
 
-% Blur and threshold again.
-% diffTh = imgaussfilt(double(diffTh), 5);
-% diffTh = diffTh > 0.9;
+% Open/close.
+seo = strel('disk', 2);
+diffTh = imopen(diffTh, seo);
 
-% Remove blobs under a certain percentile.
+sec = strel('disk', 15);
+diffTh = imclose(diffTh, sec);
+
+% Erode.
+sede = strel('disk', 2);
+diffTh = imerode(diffTh, sede);
+
+% Remove blobs under a certain percentile again.
 blobAreas = regionprops(diffTh, 'Area');
 blobAreas = [blobAreas.Area];
 
-areaThreshold = prctile(blobAreas, 95);
+areaThreshold = prctile(blobAreas, 70, 2);
 
 diffTh = bwareaopen(diffTh, round(areaThreshold));
 
-% Close.
-se = strel('disk', 5);
-diffTh = imopen(diffTh, se);
-diffTh = imclose(diffTh, se);
+% Re-dilate.
+diffTh = imdilate(diffTh, sede);
 
 blobImage = diffTh;
 
