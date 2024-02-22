@@ -3,7 +3,7 @@ close all;
 
 %% Paths
 
-baseFolder = "/Volumes/Samsung 980/GOPRO/udine/";
+baseFolder = "/Volumes/Samsung 980/GOPRO/coderno/";
 
 leftSubfolder = "frames/left";
 rightSubfolder = "frames/right";
@@ -27,13 +27,15 @@ imdsL = imageDatastore(baseFolder + leftSubfolder);
 imdsR = imageDatastore(baseFolder + rightSubfolder);
 
 % Homography exists?
-if ~isfile(baseFolder + homographyFile)
+if true %~isfile(baseFolder + homographyFile)
     warning("Homography file not found, please calibrate...");
 
-    H = calibrateGroundHomography(imdsL.Files{calibrationFrame}, imdsR.Files{calibrationFrame}, stereoParams);
-    save(baseFolder + homographyFile, 'H');
+    plane = calibrateGroundPlane(imdsL.Files{calibrationFrame}, imdsR.Files{calibrationFrame}, stereoParams);
+    H = stereoAndPlaneToHom(plane, stereoParams);
+
+    save(baseFolder + homographyFile, 'H', 'plane');
 else
-    load(baseFolder + homographyFile, 'H');
+    load(baseFolder + homographyFile, 'H', 'plane');
 end
 
 %% Loop
