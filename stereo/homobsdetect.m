@@ -66,7 +66,7 @@ mask2 = undistortImage(white, stereoParams.CameraParameters2);
 [mask1, mask2] = rectifyStereoImages(mask1, mask2, stereoParams);
 
 % Warp.
-I1 = imwarp(I1, H.invert, 'OutputView', imref2d(size(I2)));
+I1 = imwarp(I1, H, 'OutputView', imref2d(size(I2)));
 
 % Resize images.
 I1 = imresize(I1, 0.5);

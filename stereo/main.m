@@ -10,8 +10,8 @@ rightSubfolder = "frames/right";
 homographyFile = "homography.mat";
 stereoParamsFile = "../stereoParams.mat";
 
-startingFrame = 80;
-calibrationFrame = 90;
+startingFrame = 236;
+calibrationFrame = 236;
 
 vw = VideoWriter("output", "MPEG-4");
 vw.FrameRate = 10;
@@ -30,8 +30,10 @@ imdsR = imageDatastore(baseFolder + rightSubfolder);
 if true %~isfile(baseFolder + homographyFile)
     warning("Homography file not found, please calibrate...");
 
-    plane = calibrateGroundPlane(imdsL.Files{calibrationFrame}, imdsR.Files{calibrationFrame}, stereoParams);
-    H = stereoAndPlaneToHom(plane, stereoParams);
+    % H = calibrateGroundHomography(imdsL.Files{calibrationFrame}, imdsR.Files{calibrationFrame}, stereoParams);
+    % n = homToPlaneNormal(H, stereoParams);
+    % plane = calibrateGroundPlane(imdsL.Files{calibrationFrame}, imdsR.Files{calibrationFrame}, stereoParams, n);
+    % H2 = stereoAndPlaneToHom(plane, stereoParams);
 
     save(baseFolder + homographyFile, 'H', 'plane');
 else
@@ -66,9 +68,11 @@ while imdsL.hasdata() && imdsR.hasdata()
     set(h, 'AlphaData', blobImage / 3);
     hold off;
 
-    frame = getframe(gcf);
+    % Write to video
+    anaglyph = stereoAnaglyph(I1, I2);
 
-    vw.writeVideo(frame);
+
+    % vw.writeVideo(frame);
 end
 
 vw.close();

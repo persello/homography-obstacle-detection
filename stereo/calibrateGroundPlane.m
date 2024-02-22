@@ -1,11 +1,12 @@
 % CALIBRATEGROUNDPLANE  Extract ground plane from stereo camera
 
-function p = calibrateGroundPlane(aPath, bPath, stereoParams)
+function p = calibrateGroundPlane(aPath, bPath, stereoParams, normal)
 
 arguments(Input)
     aPath {mustBeFile}
     bPath {mustBeFile}
     stereoParams stereoParameters
+    normal (1, 3) {mustBeReal}
 end
 
 arguments(Output)
@@ -30,12 +31,8 @@ b = undistortImage(b, stereoParams.CameraParameters2);
 % imageViewer(an);
 
 % Disparity map.
-disparityRange = [24 128];
+disparityRange = [0 64];
 disparityMap = disparitySGM(rgb2gray(aRect), rgb2gray(bRect), "DisparityRange", disparityRange);
-
-% Filter out sky.
-bluePixels = bRect(:, :, 3) > 200;
-disparityMap(bluePixels) = NaN;
 
 figure("Name", "Plane calibration disparity map");
 imshow(disparityMap, DisplayRange=disparityRange);
@@ -43,6 +40,13 @@ colormap jet;
 colorbar;
 
 drawnow;
+
+% Let the user select a polygonal region of interest (ROI).
+roi = drawpolygon("Color", "r");
+
+% NaN outside the ROI.
+mask = poly2mask(roi.Position(:, 1), roi.Position(:, 2), size(disparityMap, 1), size(disparityMap, 2));
+disparityMap(~mask) = NaN;
 
 % Reconstruct.
 scene = reconstructScene(disparityMap, stereoParams);
@@ -55,18 +59,9 @@ pcshow(pcloud);
 drawnow;
 
 % Estimate plane.
-interest = pcloud.findPointsInROI([-Inf, Inf, 1000, Inf, 0, 4000]);
-p = pcfitplane(pcloud, 10, [0, 1, -0.5], 25, "MaxNumTrials", 100000, "SampleIndices", interest);
+p = pcfitplane(pcloud, 100, normal, 1, "MaxNumTrials", 100000);
 
 hold on;
-plot(p);
-
-drawnow;
-
-figure("Name", "Relative poses");
-plotCamera("AbsolutePose", rigidtform3d(eye(3), [0 0 0]'), Size=10);
-hold on;
-plotCamera("AbsolutePose", stereoParams.PoseCamera2, Size=10);
 plot(p);
 
 drawnow;

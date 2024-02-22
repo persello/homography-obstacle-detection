@@ -11,7 +11,7 @@ arguments(Input)
 end
 
 arguments(Output)
-    H projective2d
+    H projtform2d
 end
 
 % Load the images.
@@ -129,6 +129,6 @@ figure("Name", "Matched features after MSAC");
 showMatchedFeatures(undistortedImages{1}, undistortedImages{2}, matchedInliers{1}, matchedInliers{2});
 
 % Estimate homography.
-H = estimateGeometricTransform(matchedInliers{1}, matchedInliers{2}, 'projective');
+H = estgeotform2d(matchedInliers{1}, matchedInliers{2}, "projective");
 
 end
