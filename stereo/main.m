@@ -10,8 +10,8 @@ rightSubfolder = "frames/right";
 homographyFile = "homography.mat";
 stereoParamsFile = "../stereoParams.mat";
 
-startingFrame = 236;
-calibrationFrame = 236;
+startingFrame = 40;
+calibrationFrame = 40;
 
 vw = VideoWriter("output", "MPEG-4");
 vw.FrameRate = 10;
@@ -49,30 +49,24 @@ for i = 1:startingFrame
 end
 
 while imdsL.hasdata() && imdsR.hasdata()
-%for i = 1:1
+
     % Read images
     I1 = read(imdsL);
     I2 = read(imdsR);
-    
+
     % Process
     [blobImage, I1, I2] = homobsdetect(I1, I2, H, toStruct(stereoParams));
-    
-    % Create full red image.
-    red = cat(3, ones(size(blobImage)), zeros(size(blobImage)), zeros(size(blobImage)));
-
-    % Show
-    figure(1);
-    imshowpair(I1, I2);
-    hold on;
-    h = imshow(red);
-    set(h, 'AlphaData', blobImage / 3);
-    hold off;
 
     % Write to video
     anaglyph = stereoAnaglyph(I1, I2);
 
+    % Overlay red blobs with transparency
+    redBlobs = cat(3, 255 * blobImage, zeros(size(blobImage), "like", anaglyph), zeros(size(blobImage), "like", anaglyph));
+    frame = imadd(anaglyph, redBlobs * 0.7, 'uint8');
 
-    % vw.writeVideo(frame);
+    imshow(frame);
+
+    writeVideo(vw, frame);
 end
 
 vw.close();

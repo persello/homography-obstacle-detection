@@ -10,10 +10,7 @@ function n = homToPlaneNormal(H, stereoParams)
     arguments(Output)
         n (3, 1) double {mustBeReal, mustBeFinite}
     end
-
-    % H = K2 * (R + t * n' / d) * inv(K1)
-    % n = [inv(t1) inv(t2) inv(t3)] / 3 * (inv(K2) * H * K1 - R)
-
+    
     R = stereoParams.PoseCamera2.R;
     t = stereoParams.PoseCamera2.Translation;
 
