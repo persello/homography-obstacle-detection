@@ -10,7 +10,7 @@ rightSubfolder = "frames/right";
 homographyFile = "homography.mat";
 stereoParamsFile = "../stereoParams.mat";
 
-startingFrame = 40;
+startingFrame = 168;
 calibrationFrame = 40;
 
 vw = VideoWriter("output", "MPEG-4");
@@ -51,7 +51,7 @@ while imdsL.hasdata() && imdsR.hasdata()
     I2 = read(imdsR);
 
     % Process
-    [blobImage, I1, I2] = homobsdetect(I1, I2, H, toStruct(stereoParams));
+    [blobImage, I1, I2, steps] = homobsdetect(I1, I2, H, toStruct(stereoParams));
 
     % Write to video
     anaglyph = stereoAnaglyph(I1, I2);
@@ -61,6 +61,8 @@ while imdsL.hasdata() && imdsR.hasdata()
     frame = imadd(anaglyph, redBlobs * 0.7, 'uint8');
 
     imshow(frame);
+
+    pause;
 
     writeVideo(vw, frame);
 end

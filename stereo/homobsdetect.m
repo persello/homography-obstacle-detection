@@ -1,6 +1,6 @@
 %% HOMOBSDETECT Detection of obstacles from homography.
 
-function [blobImage, I1, I2] = homobsdetect(I1, I2, H, stereoParams)
+function [blobImage, I1, I2, steps] = homobsdetect(I1, I2, H, stereoParams)
 arguments(Input)
     I1 (:, :, :) uint8 {mustBeNonempty}
     I2 (:, :, :) uint8 {mustBeNonempty}
@@ -12,6 +12,8 @@ arguments(Output)
     blobImage (:, :) logical
     I1 (:, :, :) uint8 {mustBeNonempty}
     I2 (:, :, :) uint8 {mustBeNonempty}
+    % Steps is a cell array of images that represent all the operations that are executed.
+    steps cell {mustBeNonempty}
 end
 
 % Undistort.
@@ -40,7 +42,7 @@ I2 = imresize(I2, 0.5);
 mask1 = imwarp(mask1, H, 'OutputView', imref2d(size(mask2)));
 
 % Subtract.
-diff = imabsdiff(I1, I2);
+steps{1} = imabsdiff(I1, I2);
 
 % Subtract mask.
 mask = mask1(:, :, 1) ~= 0 & mask2(:, :, 1) ~= 0;
@@ -49,33 +51,33 @@ mask = mask1(:, :, 1) ~= 0 & mask2(:, :, 1) ~= 0;
 mask = imresize(mask, 0.5);
 
 % Mask.
-diff = diff .* uint8(mask);
+steps{2} = steps{1} .* uint8(mask);
 
 % Threshold.
-diffTh = im2gray(im2double(diff)) > 0.05;
+steps{3} = im2gray(im2double(steps{2})) > 0.05;
 
 % Open/close.
 seo = strel('disk', 2);
-diffTh = imopen(diffTh, seo);
+steps{4} = imopen(steps{3}, seo);
 
 sec = strel('disk', 15);
-diffTh = imclose(diffTh, sec);
+steps{5} = imclose(steps{4}, sec);
 
 % Erode.
 sede = strel('disk', 2);
-diffTh = imerode(diffTh, sede);
+steps{6} = imerode(steps{5}, sede);
 
 % Remove blobs under a certain percentile again.
-blobAreas = regionprops(diffTh, 'Area');
+blobAreas = regionprops(steps{6}, 'Area');
 blobAreas = [blobAreas.Area];
 
 areaThreshold = prctile(blobAreas, 70, 2);
 
-diffTh = bwareaopen(diffTh, round(areaThreshold));
+steps{7} = bwareaopen(steps{6}, round(areaThreshold));
 
 % Re-dilate.
-diffTh = imdilate(diffTh, sede);
+steps{8} = imdilate(steps{7}, sede);
 
-blobImage = diffTh;
+blobImage = steps{end};
 
 end
